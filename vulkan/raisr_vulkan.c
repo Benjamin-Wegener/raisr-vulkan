@@ -76,8 +76,7 @@ static VkCommandPool vk_command_pool;
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        printf("Usage: %s <input_image> <output_image>
-", argv[0]);
+        printf("Usage: %s <input_image> <output_image>\n", argv[0]);
         return 1;
     }
 
@@ -88,15 +87,12 @@ int main(int argc, char* argv[]) {
     #if HAVE_VULKAN
     vulkan_available = init_vulkan();
     if (vulkan_available) {
-        printf("Vulkan acceleration enabled
-");
+        printf("Vulkan acceleration enabled\n");
     } else {
-        printf("Vulkan not available, using CPU processing
-");
+        printf("Vulkan not available, using CPU processing\n");
     }
     #else
-    printf("Vulkan support not compiled in, using CPU processing
-");
+    printf("Vulkan support not compiled in, using CPU processing\n");
     #endif
 
     // Read input image in YCbCr color space
@@ -106,13 +102,11 @@ int main(int argc, char* argv[]) {
     int height, width;
     
     if (!read_jpeg_file(input_filename, &y_channel, &cb_channel, &cr_channel, &height, &width)) {
-        fprintf(stderr, "Error reading input image
-");
+        fprintf(stderr, "Error reading input image\n");
         return 1;
     }
 
-    printf("Input image size: %dx%d
-", width, height);
+    printf("Input image size: %dx%d\n", width, height);
 
     // Upscale (bilinear interpolation)
     int heightLR = height;
@@ -125,8 +119,7 @@ int main(int argc, char* argv[]) {
     unsigned char* upscaled_cr = malloc(heightHR * widthHR);
     
     if (!upscaled_y || !upscaled_cb || !upscaled_cr) {
-        fprintf(stderr, "Memory allocation failed
-");
+        fprintf(stderr, "Memory allocation failed\n");
         free(y_channel);
         free(cb_channel);
         free(cr_channel);
@@ -146,12 +139,10 @@ int main(int argc, char* argv[]) {
     
     FILE* filter_file = fopen("filter.bin", "rb");
     if (!filter_file) {
-        fprintf(stderr, "Could not open filter file. Using default averaging filter.
-");
+        fprintf(stderr, "Could not open filter file. Using default averaging filter.\n");
         h = malloc(filter_size * sizeof(double));
         if (!h) {
-            fprintf(stderr, "Memory allocation failed
-");
+            fprintf(stderr, "Memory allocation failed\n");
             free(y_channel);
             free(cb_channel);
             free(cr_channel);
@@ -171,8 +162,7 @@ int main(int argc, char* argv[]) {
         fread(&file_filter_size, sizeof(unsigned int), 1, filter_file);
         
         if (file_filter_size != filter_size) {
-            fprintf(stderr, "Filter size mismatch. Expected %d, got %d
-", filter_size, file_filter_size);
+            fprintf(stderr, "Filter size mismatch. Expected %d, got %d\n", filter_size, file_filter_size);
             fclose(filter_file);
             free(y_channel);
             free(cb_channel);
@@ -185,8 +175,7 @@ int main(int argc, char* argv[]) {
         
         h = malloc(filter_size * sizeof(double));
         if (!h) {
-            fprintf(stderr, "Memory allocation failed
-");
+            fprintf(stderr, "Memory allocation failed\n");
             fclose(filter_file);
             free(y_channel);
             free(cb_channel);
@@ -202,8 +191,7 @@ int main(int argc, char* argv[]) {
         fclose(filter_file);
         
         if (elements_read != filter_size) {
-            fprintf(stderr, "Error reading filter data. Expected %d elements, read %zu
-", filter_size, elements_read);
+            fprintf(stderr, "Error reading filter data. Expected %d elements, read %zu\n", filter_size, elements_read);
             free(h);
             free(y_channel);
             free(cb_channel);
@@ -214,8 +202,7 @@ int main(int argc, char* argv[]) {
             return 1;
         }
         
-        printf("Successfully loaded trained filter with %d elements
-", filter_size);
+        printf("Successfully loaded trained filter with %d elements\n", filter_size);
     }
     
     // Calculate predictHR pixels (only for Y channel)
@@ -223,8 +210,7 @@ int main(int argc, char* argv[]) {
     int predictHR_width = widthHR - 2 * MARGIN;
     double* predictHR = calloc(predictHR_height * predictHR_width, sizeof(double));
     if (!predictHR) {
-        fprintf(stderr, "Memory allocation failed
-");
+        fprintf(stderr, "Memory allocation failed\n");
         free(y_channel);
         free(cb_channel);
         free(cr_channel);
@@ -279,8 +265,7 @@ int main(int argc, char* argv[]) {
     clock_t end_time = clock();
     double cpu_time_used = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
     
-    printf("Processing time: %f seconds
-", cpu_time_used);
+    printf("Processing time: %f seconds\n", cpu_time_used);
     
     // Scale back to [0,255] for Y channel only
     for (int row = MARGIN; row < heightHR - MARGIN; row++) {
@@ -292,8 +277,7 @@ int main(int argc, char* argv[]) {
     
     // Write output image
     if (!write_jpeg_file(output_filename, upscaled_y, upscaled_cb, upscaled_cr, heightHR, widthHR)) {
-        fprintf(stderr, "Error writing output image
-");
+        fprintf(stderr, "Error writing output image\n");
         free(y_channel);
         free(cb_channel);
         free(cr_channel);
@@ -307,8 +291,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    printf("Output image written to %s
-", output_filename);
+    printf("Output image written to %s\n", output_filename);
     
     // Cleanup Vulkan
     #if HAVE_VULKAN

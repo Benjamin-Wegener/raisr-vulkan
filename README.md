@@ -1,6 +1,6 @@
 # RAISR
 
-A Python implementation of [RAISR](http://ieeexplore.ieee.org/document/7744595/)
+A Python & a C/Vulkan implementation of [RAISR](http://ieeexplore.ieee.org/document/7744595/)
 
 ## How To Use
 
@@ -44,6 +44,29 @@ To use an alternative filter file, take using the pretrained `filters/filter_BSD
 ```
 python test.py -f filters/filter_BSDS500
 ```
+
+### Testing (C with Vulkan acceleration)
+
+This repository also includes a C implementation with optional Vulkan acceleration in the `vulkan` directory.
+
+To build and run the C version:
+
+```bash
+cd vulkan
+make
+./raisr_vulkan input_image.jpg output_image.jpg
+```
+
+The C implementation will automatically use Vulkan if available, otherwise it will fall back to CPU processing. It uses multithreading to process the image efficiently.
+
+### Converting Filters for Vulkan / C Implementation
+
+After training, you need to convert the filters to binary format for use with the C implementation:
+
+```bash
+python filters/save_filter.py
+```
+Thereafter put the resulting file in the vulkan dir before running.
 
 ## Visualization
 

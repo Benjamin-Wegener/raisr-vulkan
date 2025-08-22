@@ -10,7 +10,7 @@ file with the following format:
 
 Usage:
     python save_filter.py
-    python save_filter.py -i filters/filter_BSDS500 -o filter.bin
+    python save_filter.py -i filter_BSDS500 -o filter.bin
 """
 
 import pickle
@@ -52,8 +52,8 @@ def save_filter(input_file, output_file):
 
 def main():
     parser = argparse.ArgumentParser(description='Convert trained RAISR filters to binary format for C implementation')
-    parser.add_argument('-i', '--input', default='filters/filter_BSDS500', 
-                        help='Input pickle file (default: filters/filter_BSDS500)')
+    parser.add_argument('-i', '--input', default='filter_BSDS500', 
+                        help='Input pickle file (default: filter_BSDS500)')
     parser.add_argument('-o', '--output', default='filter.bin',
                         help='Output binary file (default: filter.bin)')
     

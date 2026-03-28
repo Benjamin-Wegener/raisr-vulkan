@@ -1,35 +1,40 @@
-CC = gcc
+# RAISR Makefile
+
+CC     = gcc
 CFLAGS = -std=c99 -O3 -Wall -Wextra -pthread
-LIBS = -ljpeg -lm
-VULKAN_LIBS = $(shell pkg-config --libs vulkan) -lvulkan
-VULKAN_CFLAGS = $(shell pkg-config --cflags vulkan)
+LIBS   = -ljpeg -lpng -lm -pthread
 
-# Check if Vulkan is available
-HAVE_VULKAN := $(shell pkg-config --exists vulkan && echo YES || echo NO)
+VULKAN_CFLAGS = $(shell pkg-config --cflags vulkan 2>/dev/null || echo "-I/usr/include")
+VULKAN_LIBS   = $(shell pkg-config --libs   vulkan 2>/dev/null || echo "-lvulkan")
+HAVE_VULKAN  := $(shell pkg-config --exists vulkan && echo 1 || echo 0)
 
-TARGET = raisr_vulkan
-SRCS = raisr_vulkan.c
-OBJS = $(SRCS:.c=.o)
+SHADER_SRC  = raisr.glsl
+SHADER_SPV  = raisr.spv
+TARGET      = raisr
 
 .PHONY: all clean
 
+ifeq ($(HAVE_VULKAN),1)
+all: $(SHADER_SPV) $(TARGET)
+
+$(SHADER_SPV): $(SHADER_SRC)
+	@echo "Compiling shader: $(SHADER_SRC) -> $(SHADER_SPV)"
+	glslc -fshader-stage=compute $(SHADER_SRC) -o $(SHADER_SPV)
+
+$(TARGET): raisr.c
+	@echo "Building with Vulkan support..."
+	$(CC) $(CFLAGS) -DHAVE_VULKAN=1 $(VULKAN_CFLAGS) -o $@ $< $(LIBS) $(VULKAN_LIBS)
+	@echo "Build complete: $(TARGET)"
+	@echo "Run './$(TARGET) --help' for usage."
+else
 all: $(TARGET)
 
-$(TARGET): $(OBJS)
-ifeq ($(HAVE_VULKAN),YES)
-	$(CC) $(CFLAGS) $(VULKAN_CFLAGS) -o $@ $^ $(LIBS) $(VULKAN_LIBS)
-	@echo "Vulkan version built successfully"
-else
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
-	@echo "Vulkan not available, built CPU-only version"
-endif
-
-%.o: %.c
-ifeq ($(HAVE_VULKAN),YES)
-	$(CC) $(CFLAGS) $(VULKAN_CFLAGS) -c $< -o $@
-else
-	$(CC) $(CFLAGS) -c $< -o $@
+$(TARGET): raisr.c
+	@echo "Vulkan not found, building CPU-only..."
+	$(CC) $(CFLAGS) -DHAVE_VULKAN=0 -o $@ $< $(LIBS)
+	@echo "Build complete: $(TARGET)"
+	@echo "Run './$(TARGET) --help' for usage."
 endif
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(TARGET) $(SHADER_SPV)

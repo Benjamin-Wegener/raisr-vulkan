@@ -2,6 +2,8 @@
 
 A Python & a C/Vulkan implementation of [RAISR](http://ieeexplore.ieee.org/document/7744595/)
 
+> **INPUT FORMAT:** Only JPEG input is supported. PNG output is supported.
+
 ## How To Use
 
 ### Prerequisites
@@ -47,26 +49,59 @@ python test.py -f filters/filter_BSDS500
 
 ### Testing (C with Vulkan acceleration)
 
-This repository also includes a C implementation with optional Vulkan acceleration in the `vulkan` directory.
+This repository also includes a C implementation with optional Vulkan GPU
+acceleration in the `vulkan` directory.
 
 To build and run the C version:
 
 ```bash
 cd vulkan
 make
-./raisr_vulkan input_image.jpg output_image.jpg
+./raisr input_image.jpg output_image.jpg
 ```
 
-The C implementation will automatically use Vulkan if available, otherwise it will fall back to CPU processing. It uses multithreading to process the image efficiently.
+The C implementation automatically uses Vulkan if available, otherwise falls
+back to multi-threaded CPU. Thread count is auto-detected at runtime.
 
-### Converting Filters for Vulkan / C Implementation
+**Options:**
 
-After training, you need to convert the filters to binary format for use with the C implementation:
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-f, --format <fmt>` | Output format: `jpeg` or `png` | `jpeg` |
+| `-j, --jpeg <quality>` | JPEG quality 1–100 | `82` |
+| `-c, --cpu` | Force CPU mode (disable Vulkan) | Auto-detect |
 
 ```bash
-python filters/save_filter.py
+./raisr input.jpg output.jpg --cpu          # force CPU
+./raisr input.jpg output.png --format png   # lossless PNG output
+./raisr input.jpg output.jpg --jpeg 95      # higher JPEG quality
 ```
-Thereafter put the resulting file in the vulkan dir before running.
+
+### Converting Filters for the C Implementation
+
+After training, convert the filters to binary format:
+
+```python
+import pickle, struct, numpy as np
+
+with open("filters/filter_BSDS500", "rb") as f:
+    filters = pickle.load(f, encoding="latin1")
+
+h = np.array(filters).flatten().astype(np.float64)
+with open("filter.bin", "wb") as f:
+    f.write(struct.pack("I", len(h)))
+    f.write(h.tobytes())
+```
+
+The original repo uses `.p` pickle files (float64) — this script converts them
+to the `filter.bin` binary format required by the C implementation.
+
+**Required files** (place in `vulkan/` directory):
+- `filter.bin` — converted filter coefficients
+- `raisr.spv` — compiled Vulkan compute shader. Recompile with:
+  ```bash
+  glslc -fshader-stage=compute raisr.glsl -o raisr.spv
+  ```
 
 ## Visualization
 
@@ -99,6 +134,18 @@ Other results using images taken from [BSDS500 database](https://www2.eecs.berke
 |![origin_crop bmp](https://user-images.githubusercontent.com/12198424/27002925-81cf7f88-4e1f-11e7-8a75-4975db1d37b8.png)|![raisr_crop bmp](https://user-images.githubusercontent.com/12198424/27002926-81d126b2-4e1f-11e7-8814-f2fce323caac.png)|
 |![origin_crop bmp](https://user-images.githubusercontent.com/12198424/27002932-a39f6cc2-4e1f-11e7-9dea-3aa79a9d9764.png)|![raisr_crop bmp](https://user-images.githubusercontent.com/12198424/27002933-a3a248ac-4e1f-11e7-9c81-807d3a5eac90.png)|
 |![origin_crop bmp](https://user-images.githubusercontent.com/12198424/27002942-c9ba697a-4e1f-11e7-8743-d41be65c09d3.png)|![raisr_crop bmp](https://user-images.githubusercontent.com/12198424/27002943-c9bcefd8-4e1f-11e7-9e55-bf5d93f17a9c.png)|
+
+## Troubleshooting
+
+| Issue | Solution |
+|:------|:---------|
+| `filter.bin` not found | Run the conversion script above |
+| Filter size mismatch | Regenerate `filter.bin` with the script above |
+| `raisr.spv` not found | Run `make` or use `--cpu` |
+| Vulkan not available | Install GPU drivers or use `--cpu` |
+| Crash on large images | GPU VRAM may be insufficient — use `--cpu` |
+
+**CPU Performance Note:** Thread count is auto-detected via `sysconf(_SC_NPROCESSORS_ONLN)` at runtime.
 
 ## Contribute
 

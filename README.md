@@ -8,7 +8,7 @@ A Python & a C/Vulkan implementation of [RAISR](http://ieeexplore.ieee.org/docum
 
 ### Prerequisites
 
-You can install most of the following packages using [pip](https://pypi.python.org/pypi/pip).
+Install the Python packages with `pip install -r requirements.txt`, or individually using [pip](https://pypi.python.org/pypi/pip):
 
 * [OpenCV-Python](https://pypi.python.org/pypi/opencv-python)
 * [NumPy](http://www.numpy.org/)
@@ -51,6 +51,8 @@ python test.py -f filters/filter_BSDS500
 
 This repository also includes a C implementation with optional Vulkan GPU
 acceleration in the `vulkan` directory.
+
+Prerequisites: a C compiler, `libjpeg` and `libpng` development headers (e.g. `libjpeg-dev libpng-dev` on Debian/Ubuntu, `jpeg libpng` via Homebrew). For GPU acceleration also install the Vulkan SDK/loader and `glslc` (shader compiler); without Vulkan the build falls back to CPU only.
 
 To build and run the C version:
 

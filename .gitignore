@@ -8,3 +8,6 @@ __pycache__
 !train/README.md
 !test/README.md
 !results/README.md
+
+vulkan/raisr
+vulkan/raisr.spv
